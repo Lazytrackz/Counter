@@ -7,88 +7,102 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+// MARK: - ViewController
+
+final class ViewController: UIViewController {
     
-    @IBOutlet weak var countLabel: UILabel!
-    @IBOutlet weak var increaseButton: UIButton!
-    @IBOutlet weak var decreaseButton: UIButton!
-    @IBOutlet weak var resetButton: UIButton!
-    @IBOutlet weak var historyWindow: UITextView!
-    private var count: Int = 0
-    private var labelText: String = "Значение счётчика: "
-    private var historyText: String = "История изменений:\n"
-    private var dateFormatter = DateFormatter()
-    private var timeString = " "
-   
-    @IBAction func increaseCountButton(_ sender: Any) {
-        let increaseValue: Int = 1
-        count += increaseValue
-        countLabel.text = labelText + "\(count)"
-        timeString  = dateFormatter.string(from: Date())
-        historyWindow.text += timeString + ":\n" + "значение изменено на: +\(increaseValue)\n"
+    // MARK: - IBOutlets
+    
+    @IBOutlet private weak var countLabel: UILabel!
+    @IBOutlet private weak var didTapIncrease: UIButton!
+    @IBOutlet private weak var didTapDecrease: UIButton!
+    @IBOutlet private weak var didTapReset: UIButton!
+    @IBOutlet private weak var historyWindow: UITextView!
+    
+    // MARK: - Properties
+    
+    private var count = 0
+    private let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ru_RU")
+        formatter.dateFormat = "dd.MM.yyyy, HH:mm:ss"
+        return formatter
+    }()
+    
+    // MARK: - Constants
+    
+    private enum Constants {
+        static let labelPrefix = "Значение счётчика: "
+        static let historyTitle = "История изменений:\n"
     }
     
+    // MARK: - Lifecycle
     
-    @IBAction func resetCountButton(_ sender: Any) {
-        count = 0
-        timeString  = dateFormatter.string(from: Date())
-        countLabel.text = labelText + "\(count)"
-        historyWindow.text += timeString + ":\n" + "значение сброшено\n"
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+        updateUI()
     }
     
-    @IBAction func decreaseCountButton(_ sender: Any) {
-        let decreaseValue: Int = 1
-        timeString  = dateFormatter.string(from: Date())
+    // MARK: - Actions
+    
+    @IBAction private func didTapIncrease(_ sender: UIButton) {
+        count += 1
+        updateUI()
+        addHistory("значение увеличено на +1")
+    }
+    
+    @IBAction private func didTapDecrease(_ sender: UIButton) {
         if count > 0 {
-            count -= decreaseValue
-            countLabel.text = labelText + "\(count)"
-            historyWindow.text += timeString + ":\n" + "значение изменено на: -\(decreaseValue)\n"
-        }else {
-            historyWindow.text += timeString + ":\n" + "попытка уменьшить значение счётчика ниже 0\n"
+            count -= 1
+            updateUI()
+            addHistory("значение уменьшено на -1")
+        } else {
+            addHistory("попытка уменьшить значение ниже 0")
         }
     }
     
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        //configure label with counter
-        countLabel.textAlignment = .center
-        countLabel.font = UIFont.systemFont(ofSize: 30.0)
-        countLabel.textColor = .purple
-        countLabel.layer.borderWidth = 2.0
-        countLabel.layer.borderColor = UIColor.purple.cgColor
-        countLabel.text = labelText + "\(count)"
-        //configureplus button
-        increaseButton.configuration = .none
-        increaseButton.setTitle(nil, for: .normal)
-        increaseButton.tintColor = .red
-        increaseButton.setImage(UIImage(systemName: "plus.circle"), for: .normal)
-        increaseButton.contentVerticalAlignment = .fill
-        increaseButton.contentHorizontalAlignment = .fill
-        //configure minus button
-        decreaseButton.configuration = .none
-        decreaseButton.setTitle(nil, for: .normal)
-        decreaseButton.tintColor = .blue
-        decreaseButton.setImage(UIImage(systemName: "minus.circle"), for: .normal)
-        decreaseButton.contentVerticalAlignment = .fill
-        decreaseButton.contentHorizontalAlignment = .fill
-        //configure reset button
-        resetButton.configuration = .none
-        resetButton.setTitle(nil, for: .normal)
-        resetButton.tintColor = .purple
-        resetButton.setImage(UIImage(systemName: "clear"), for: .normal)
-        resetButton.contentVerticalAlignment = .fill
-        resetButton.contentHorizontalAlignment = .fill
-        //configure log window
-        historyWindow.isScrollEnabled = true
-        historyWindow.isEditable = false
-        historyWindow.text = historyText
-        //configure date format
-        dateFormatter.locale = Locale(identifier: "ru_RU")
-        dateFormatter.dateFormat = "dd.MM.yyyy, HH:mm:ss"
-        
+    @IBAction private func didTapReset(_ sender: UIButton) {
+        count = 0
+        updateUI()
+        addHistory("значение сброшено")
     }
-
-
+    
+    // MARK: - Private Methods
+    
+    private func setupUI() {
+        countLabel.textAlignment = .center
+        countLabel.font = .systemFont(ofSize: 30)
+        countLabel.textColor = .purple
+        countLabel.layer.borderWidth = 2
+        countLabel.layer.borderColor = UIColor.purple.cgColor
+        
+        configure(button: didTapIncrease, image: "plus.circle", color: .red)
+        configure(button: didTapDecrease, image: "minus.circle", color: .blue)
+        configure(button: didTapReset, image: "clear", color: .purple)
+        
+        historyWindow.isEditable = false
+        historyWindow.text = Constants.historyTitle
+    }
+    
+    private func configure(button: UIButton, image: String, color: UIColor) {
+        button.configuration = .none
+        button.setTitle(nil, for: .normal)
+        button.tintColor = color
+        button.setImage(UIImage(systemName: image), for: .normal)
+        button.contentVerticalAlignment = .fill
+        button.contentHorizontalAlignment = .fill
+    }
+    
+    private func updateUI() {
+        countLabel.text = Constants.labelPrefix + "\(count)"
+    }
+    
+    private func addHistory(_ text: String) {
+        let time = dateFormatter.string(from: Date())
+        historyWindow.text += "\(time):\n\(text)\n"
+        
+        let range = NSRange(location: historyWindow.text.count - 1, length: 1)
+        historyWindow.scrollRangeToVisible(range)
+    }
 }
-
